@@ -1,0 +1,13 @@
+version: "3.5"
+
+services:
+  gve_devnet_meraki_org_day0_network_setup:
+    image: ghcr.io/gve-sw/gve_devnet_meraki_org_day0_network_setup:latest
+#    build: .
+    container_name: gve_devnet_meraki_org_day0_network_setup
+    environment:
+      - MERAKI_API_KEY=${MERAKI_API_KEY}
+      - ORG_ID=${ORG_ID}
+    volumes:
+      - ./src/logs:/app/logs
+      - ./src/configs:/app/configs

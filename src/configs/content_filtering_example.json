@@ -1,0 +1,15 @@
+{
+  "allowedUrlPatterns": [
+    "http://www.example.org",
+    "http://help.com.au"
+  ],
+  "blockedUrlPatterns": [
+    "http://www.example.com",
+    "http://www.betting.com"
+  ],
+  "_name_blockedUrlCategories": [
+    "Education",
+    "Malware Sites"
+  ],
+  "urlCategoryListSize": "topSites"
+}

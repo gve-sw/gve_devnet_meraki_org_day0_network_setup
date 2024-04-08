@@ -1,0 +1,4 @@
+{
+  "dhcpHandling": "Run a DHCP server",
+  "dnsNameservers": "google_dns"
+}

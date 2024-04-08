@@ -1,0 +1,102 @@
+{
+  "_name_copyFromNetworkId": "Clone Source",
+  "networks": [
+    {
+      "metadata": {
+        "name": "Network A",
+        "productTypes": [
+          "appliance"
+        ],
+        "tags": [],
+        "notes": ""
+      },
+      "devices": [
+        {
+          "serial": "XXXX-XXXX-XXXX",
+          "name": "MX Example",
+          "address": ""
+        }
+      ],
+      "claim": {
+        "serials": [
+          "XXXX-XXXX-XXXX"
+        ]
+      },
+      "siteToSiteVPN": {
+        "mode": "hub"
+      },
+      "content_filtering": {
+        "_ref": "content_filtering_example.json"
+      },
+      "amp": {
+        "mode": "enabled",
+        "allowedUrls": [
+          {
+            "url": "example.org",
+            "comment": "allow example.org"
+          },
+          {
+            "url": "help.com.au",
+            "comment": "allow help.com.au"
+          }
+        ]
+      },
+      "syslog": {
+        "servers": [
+          {
+            "host": "8.8.8.8",
+            "port": 514,
+            "roles": [
+              "URLs"
+            ]
+          }
+        ]
+      },
+      "snmp": {
+        "access": "community",
+        "communityString": "password"
+      },
+      "traffic_shaping": {
+        "_uplink_bandwidth": {
+          "bandwidthLimits": {
+            "wan1": {
+              "limitUp": 100000,
+              "limitDown": 100000
+            },
+            "wan2": {
+              "limitUp": null,
+              "limitDown": null
+            }
+          }
+        }
+      },
+      "vlans": [
+        {
+          "id": 100,
+          "name": "VLAN 100",
+          "subnet": "10.100.100.0/26",
+          "applianceIp": "10.100.100.1",
+          "_name_groupPolicyId": "New group",
+          "_vpn": {
+            "useVpn": true
+          },
+          "_dhcp": {
+            "_ref": "dhcp_google_no_reserve_example.json"
+          }
+        }
+      ],
+      "firmware": {
+        "products": {
+          "appliance": {
+            "nextUpgrade": {
+              "toVersion": {
+                "_version_id": "MX 18.107.9"
+              }
+            },
+            "participateInNextBetaRelease": false
+          }
+        }
+      }
+    }
+  ]
+}

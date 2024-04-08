@@ -1,0 +1,19 @@
+# Environment
+venv
+
+# Sensitive File
+.env
+src/config.py
+
+# IDE files
+.idea
+__pycache__
+.DS_Store
+
+# JSON File Input
+src/configs/*.json
+!src/configs/*_example.json
+
+# Excel File Input (Alternate)
+src/configs/*.xlsx
+!src/configs/*_example.xlsx
