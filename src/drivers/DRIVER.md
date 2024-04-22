@@ -28,3 +28,5 @@ The driver expects the field names seen in the Excel file and expects the exact 
 * To add or remove VLANs, simply add or remove a VLAN row
 
 If using the driver, it's recommend to copy and paste the provided example, then fill in the necessary values (and consult the API documentation for value restrictions).
+
+**Note:** Anything defined after "Networks" row is processed by the script. Other "global variables" can be defined and cells can be referenced to reuse values.
