@@ -19,7 +19,6 @@ __license__ = "Cisco Sample Code License, Version 1.1"
 
 import numpy as np
 import openpyxl.worksheet.worksheet
-import xlwings as xl
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -30,17 +29,6 @@ from rich.console import Console
 from rich.panel import Panel
 
 from .driver_interface import ExcelDriverInterface
-
-
-def eval_formulas(path: str):
-    """
-    Opens and closes Excel Workbook, forces formulas and references to evaluate
-    :param path: Path to Excel file
-    """
-    app = xl.App(visible=False)
-    book = app.books.open(path)
-    book.save()
-    app.kill()
 
 
 def process_vlans(vlan_df: pd.DataFrame) -> list[dict]:
@@ -176,9 +164,6 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
             if first_col.iloc[row, 0] == 'Networks':
                 start_row = row
                 break
-
-        # Force formulas to evaluate (for references: may prompt requesting access from app to excel)
-        eval_formulas(self.input_file)
 
         # Read the Excel file (only include everything past "Networks")
         df = pd.read_excel(self.input_file, header=None, engine="openpyxl",
