@@ -85,6 +85,26 @@ def process_vlans(vlan_df: pd.DataFrame) -> list[dict]:
     return parsed_vlans
 
 
+def process_per_port_vlans(per_port_vlan_df: pd.DataFrame) -> list[dict]:
+    """
+    Process each Excel line representing a Per Port VLAN config, parse it into the correct Per Port VLAN JSON structure
+    :param per_port_vlan_df: Dataframe representing all lines of per port vlan config from Excel doc
+    :return: List of parsed Per Port VLAN dictionaries in the proper format
+    """
+    parsed_vlans = []
+
+    # Convert each VLAN to a dict and add to the current network
+    for _, vlan_row in per_port_vlan_df.iterrows():
+        vlan_dict = vlan_row.to_dict()
+
+        parsed_vlan = {'portId': int(vlan_row.iloc[0]), 'enabled': vlan_dict['enabled'], 'type': vlan_dict['type'],
+                       'vlan': vlan_dict['vlan'], 'accessPolicy': vlan_dict['accessPolicy']}
+
+        parsed_vlans.append(parsed_vlan)
+
+    return parsed_vlans
+
+
 def insert_into_specific_dict_position(current_dict: dict, pos: int, key: str, value: dict | list) -> dict:
     """
     Insert a key, value into a specific position within a dict (ex: claim configuration must be earlier in the dict!)
@@ -303,6 +323,25 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
 
                     # Process each vlan, convert to appropriate format
                     current_network['vlans'] = process_vlans(vlan_df)
+
+                continue  # Skip the outer loop increment since it's done internally for VLAN rows
+
+            # VLAN Per Port Section
+            if 'mx port' in column_identifier:
+                vlan_per_port_headers = row.tolist()
+                vlan_per_port_data = []
+
+                i += 1  # Move to the next row to start processing VLAN data
+                while i < len(df) is not pd.isnull(df.iloc[i][0]) and isinstance(df.iloc[i][0], int):
+                    vlan_per_port_data.append(df.iloc[i].tolist())
+                    i += 1
+
+                # Create VLAN DataFrame and convert to dictionary if vlan_data is not empty
+                if vlan_per_port_data:
+                    vlan_per_port_df = pd.DataFrame(vlan_per_port_data, columns=vlan_per_port_headers)
+
+                    # Process each vlan, convert to appropriate format
+                    current_network['vlan_per_port'] = process_per_port_vlans(vlan_per_port_df)
 
                 continue  # Skip the outer loop increment since it's done internally for VLAN rows
 

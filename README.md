@@ -9,6 +9,7 @@ Supported Settings Include:
 * Firmware Upgrades
 * Update Device (address, tags, etc.)
 * VLAN Creation (VPN, DHCP configurations: `_vpn`, `_dhcp`)
+* MX Per Port VLAN Settings
 * Site to Site VPN Configuration
 * Threat Protection Configurations (AMP)
 * Content Filtering Configurations

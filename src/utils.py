@@ -509,6 +509,43 @@ def vlans_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, list 
     return status, response, log_buffer
 
 
+def vlan_per_port_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, list | str, str]:
+    """
+    Apply VLAN Per Port Configs to Meraki Network
+    :param log_buffer: String representing processing logs written to log file
+    :param net_id: Network ID
+    :param config: Raw VLAN Per Port Config from JSON
+    :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
+    """
+    log_buffer += "VLAN Per Port Config(s):\n"
+    status = "Success"
+
+    # Iterate through each MX Port, modify VLAN Per port settings
+    for per_port_config in config:
+        # Check for Ref. Config, load if found
+        if "_ref" in per_port_config:
+            per_port_config = load_ref_config(per_port_config["_ref"])
+
+            if not per_port_config:
+                log_buffer += "-VLAN Per Port Update (Failure): Ref File not found... skipping.\n"
+                status = "Partial"
+                continue
+
+        # Update Per Port VLAN Config
+        error_code, new_per_port = meraki_functions.update_network_appliance_port(net_id, per_port_config)
+
+        if error_code:
+            log_buffer += f"-VLAN Per Port Update (Failure): \n\t{new_per_port}\n"
+            status = "Partial"
+            continue
+
+        log_buffer += f"-VLAN Per Port Update (Success): \n\t{new_per_port}\n"
+
+    # Get All Per Port VLAN Settings, return result
+    error_code, response = meraki_functions.get_network_appliance_ports(net_id)
+    return status, response, log_buffer
+
+
 def devices_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, list | str, str]:
     """
     Apply Devices Configs to Meraki Devices

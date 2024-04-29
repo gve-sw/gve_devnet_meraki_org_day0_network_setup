@@ -212,6 +212,11 @@ def build_new_network(progress: Progress, copy_from_id: str, network_config: dic
             status, output, log_buffer = utils.vlans_config(log_buffer, net_id, network_config[setting])
             completion_status["settings"][setting]['status'] = status
             completion_status["settings"][setting]['output'] = output
+        elif setting == "vlan_per_port":
+            # Process VLAN Per Port List
+            status, output, log_buffer = utils.vlan_per_port_config(log_buffer, net_id, network_config[setting])
+            completion_status["settings"][setting]['status'] = status
+            completion_status["settings"][setting]['output'] = output
         elif setting == "devices":
             # Process Device List (modifies attributes about device, NOT claiming - devices should be claimed)
             status, output, log_buffer = utils.devices_config(log_buffer, net_id, network_config[setting])

@@ -449,3 +449,40 @@ def trigger_network_firmware_upgrades(network_id: str, firmware_upgrade_config: 
     except Exception as e:
         # SDK Error
         return "500", str(e)
+
+
+def get_network_appliance_ports(network_id: str) -> tuple[
+    str | None, dict | str]:
+    """
+    Get Network Appliance Port configs, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/get-network-appliance-ports/
+    :param network_id: Network ID
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.appliance.getNetworkAppliancePorts(network_id)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)
+
+
+def update_network_appliance_port(network_id: str, appliance_port_config: dict) -> tuple[
+    str | None, dict | str]:
+    """
+    Update Network Appliance Port configs, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/update-network-appliance-port/
+    :param network_id: Network ID
+    :param appliance_port_config: Appliance Port Update Payload
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.appliance.updateNetworkAppliancePort(network_id, **appliance_port_config)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)

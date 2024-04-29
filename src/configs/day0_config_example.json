@@ -85,6 +85,22 @@
           }
         }
       ],
+      "vlan_per_port": [
+        {
+          "portId": 4,
+          "enabled": true,
+          "type": "access",
+          "vlan": 100,
+          "accessPolicy": "open"
+        },
+        {
+          "portId": 5,
+          "enabled": true,
+          "type": "access",
+          "vlan": 100,
+          "accessPolicy": "open"
+        }
+      ],
       "firmware": {
         "products": {
           "appliance": {
