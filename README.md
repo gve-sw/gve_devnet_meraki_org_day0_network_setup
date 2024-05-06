@@ -5,11 +5,13 @@ The script expects a JSON or Excel file structured in a specific format (see `JS
 
 Supported Settings Include:
 * Network Creation
+* Binding/Unbinding Networks to Configuration Templates
 * Claim Devices into Network (must be present and unclaimed in inventory!)
-* Firmware Upgrades
-* Update Device (address, tags, etc.)
+* Firmware Upgrades 
+* Device Settings (address, tags, etc.)
 * VLAN Creation (VPN, DHCP configurations: `_vpn`, `_dhcp`)
 * MX Per Port VLAN Settings
+* MX Warm Spare Configuration
 * Site to Site VPN Configuration
 * Threat Protection Configurations (AMP)
 * Content Filtering Configurations

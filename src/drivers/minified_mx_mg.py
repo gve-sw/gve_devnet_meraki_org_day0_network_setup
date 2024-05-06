@@ -19,7 +19,6 @@ __license__ = "Cisco Sample Code License, Version 1.1"
 
 import numpy as np
 import openpyxl.worksheet.worksheet
-
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill, borders
@@ -278,7 +277,7 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
                             'limitDown'] = row[remaining_row.first_valid_index()]
 
             # Claim Section (MX and MG)
-            if 'serial' in column_identifier:
+            if 'serial number' in column_identifier:
                 # Check side by side columns (do not add firmware value if left blank!)
                 serial = row[remaining_row.first_valid_index()]
 
@@ -323,6 +322,59 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
 
                     # Process each vlan, convert to appropriate format
                     current_network['vlans'] = process_vlans(vlan_df)
+
+                continue  # Skip the outer loop increment since it's done internally for VLAN rows
+
+            # Warm Spare Section
+            if 'warm spare' in column_identifier:
+                spare_headers = row.tolist()
+                spare_data = []
+
+                i += 1  # Move to the next row to start processing Warm Spare data
+                spare_data.append(df.iloc[i].tolist())
+                i += 1
+
+                # Create Spare DataFrame and convert to dictionary if spare_data is not empty
+                if spare_data:
+                    spare_df = pd.DataFrame(spare_data, columns=spare_headers)
+
+                    # Convert spare dict
+                    parsed_spare = {}
+                    for _, spare_row in spare_df.iterrows():
+                        spare_dict = spare_row.to_dict()
+                        parsed_spare["spareSerial"] = spare_row.iloc[0]
+                        parsed_spare["enabled"] = spare_dict["enabled"]
+                        parsed_spare["uplinkMode"] = spare_dict["uplinkMode"]
+
+                        if parsed_spare["uplinkMode"] == "virtual":
+                            parsed_spare["virtualIp1"] = spare_dict["virtualIp1"]
+                            parsed_spare["virtualIp2"] = spare_dict["virtualIp2"]
+
+                    current_network['warmspare'] = parsed_spare
+
+                continue  # Skip the outer loop increment since it's done internally for VLAN rows
+
+            # Warm Spare Section
+            if 'template name' in column_identifier:
+                template_headers = row.tolist()
+                template_data = []
+
+                i += 1  # Move to the next row to start processing Warm Spare data
+                template_data.append(df.iloc[i].tolist())
+                i += 1
+
+                # Create Spare DataFrame and convert to dictionary if spare_data is not empty
+                if template_data:
+                    template_df = pd.DataFrame(template_data, columns=template_headers)
+
+                    # Convert template dict
+                    parsed_template = {}
+                    for _, template_row in template_df.iterrows():
+                        template_dict = template_row.to_dict()
+                        parsed_template["_name_template"] = template_row.iloc[0]
+                        parsed_template["_unbind"] = {"retainConfigs": template_dict['retainConfigs']}
+
+                    current_network['template'] = parsed_template
 
                 continue  # Skip the outer loop increment since it's done internally for VLAN rows
 

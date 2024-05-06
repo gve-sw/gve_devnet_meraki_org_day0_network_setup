@@ -47,6 +47,76 @@ def network_name_to_id() -> dict:
     return net_name_to_id
 
 
+def org_config_templates() -> tuple[dict, dict]:
+    """
+    Get Meraki Org Config Templates, return mapping of config template name to id, and id to name
+    https://developer.cisco.com/meraki/api-v1/get-organization-config-templates/
+    :return: Dict mapping of config template name to id, and id to name
+    """
+    # Get Org Config Templates
+    templates = dashboard.organizations.getOrganizationConfigTemplates(ORG_ID)
+
+    config_template_name_to_id = {}
+    config_template_id_to_name = {}
+    for template in templates:
+        config_template_name_to_id[template['name']] = template['id']
+        config_template_id_to_name[template['id']] = template['name']
+
+    return config_template_name_to_id, config_template_id_to_name
+
+
+def network_to_config_templates(template_id_to_name: dict) -> dict:
+    """
+    Return dict of Network Names bound to config templates, to config template id
+    :param template_id_to_name: Config Template ID to Name mapping
+    :return: Dict mapping of network name to associated config template id
+    """
+    # Get Org Networks
+    networks = dashboard.organizations.getOrganizationNetworks(ORG_ID, isBoundToConfigTemplate=True, total_pages='all')
+
+    net_name_to_template_name = {}
+    for network in networks:
+        net_name_to_template_name[network['id']] = template_id_to_name[network['configTemplateId']]
+
+    return net_name_to_template_name
+
+
+def unbind_network(network_id: str, unbind_config: dict) -> tuple[str | None, dict | str]:
+    """
+    Unbind Meraki Network from Template, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/unbind-network/
+    :param network_id: Network ID
+    :param unbind_config: Unbind config payload
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.networks.unbindNetwork(network_id, **unbind_config)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)
+
+
+def bind_network(network_id: str, bind_config: dict) -> tuple[str | None, dict | str]:
+    """
+    Bind Meraki Network from Template, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/bind-network/
+    :param network_id: Network ID
+    :param bind_config: Bind config payload
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.networks.bindNetwork(network_id, **bind_config)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)
+
+
 def update_network(network_id: str, network_config: dict) -> tuple[str | None, dict | str]:
     """
     Update Meraki Network, return response or (error code, error message)
@@ -124,23 +194,6 @@ def get_content_filtering_categories(network_id: str) -> tuple[str | None, dict 
         return "500", str(e)
 
 
-def enable_vlans(network_id: str) -> tuple[str | None, dict | str]:
-    """
-    Enable VLANS on Meraki Appliance Network, return response or (error code, error message)
-    https://developer.cisco.com/meraki/api-v1/update-network-appliance-vlans-settings/
-    :param network_id: Network ID
-    :return: Error Code (if relevant), Response (or Error Message)
-    """
-    try:
-        response = dashboard.appliance.updateNetworkApplianceVlansSettings(network_id, vlansEnabled=True)
-        return None, response
-    except meraki.APIError as e:
-        return e.status, str(e)
-    except Exception as e:
-        # SDK Error
-        return "500", str(e)
-
-
 def get_vlans(network_id: str) -> tuple[str | None, list | str]:
     """
     Get Appliance VLANs, return response or (error code, error message)
@@ -168,17 +221,15 @@ def create_vlan(network_id: str, vlan_config: dict) -> tuple[str | None, dict | 
     """
     try:
         # Enable VLANs (if not enabled - avoids error - safe assumption if you have vlans in the settings)
-        error_code, response = enable_vlans(network_id)
+        response = dashboard.appliance.updateNetworkApplianceVlansSettings(network_id, vlansEnabled=True)
 
-        if error_code:
-            return error_code, response
-        else:
-            response = dashboard.appliance.createNetworkApplianceVlan(network_id, **vlan_config)
-            return None, response
+        # Create VLANs
+        response = dashboard.appliance.createNetworkApplianceVlan(network_id, **vlan_config)
+        return None, response
 
     except meraki.APIError as e:
-        # Special processing if vlan exists, update!
-        if 'taken' in e.message['errors'][0]:
+        # Special processing if vlan exists (or we are modifying vlans on a template bound network), update!
+        if 'taken' in e.message['errors'][0] or 'bound' in e.message['errors'][0]:
             # Safe assumptions config is correct and minimum fields present (otherwise different error)
             vlan_id = vlan_config['id']
             del vlan_config['id']
@@ -480,6 +531,25 @@ def update_network_appliance_port(network_id: str, appliance_port_config: dict) 
     """
     try:
         response = dashboard.appliance.updateNetworkAppliancePort(network_id, **appliance_port_config)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)
+
+
+def update_warm_spare(network_id: str, warm_spare_config: dict) -> tuple[
+    str | None, dict | str]:
+    """
+    Update Network Appliance Port configs, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/update-network-appliance-warm-spare/
+    :param network_id: Network ID
+    :param warm_spare_config: Warm Spare Update Payload
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.appliance.updateNetworkApplianceWarmSpare(network_id, **warm_spare_config)
         return None, response
     except meraki.APIError as e:
         return e.status, str(e)

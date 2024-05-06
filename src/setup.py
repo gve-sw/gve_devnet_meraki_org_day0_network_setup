@@ -48,8 +48,10 @@ logger = utils.set_up_logging()
 # Rich console instance
 console = Console()
 
-# Get global network name to ID mapping table
+# Get global network name to ID mapping table, config templates to ID mapping table
 net_name_to_id = meraki_functions.network_name_to_id()
+template_name_to_id, template_id_to_name = meraki_functions.org_config_templates()
+net_id_to_config_template = meraki_functions.network_to_config_templates(template_id_to_name)
 
 
 def discover_and_load_drivers() -> dict:
@@ -138,31 +140,31 @@ def build_new_network(progress: Progress, copy_from_id: str, network_config: dic
     if copy_from_id:
         metadata['copyFromNetworkId'] = copy_from_id
 
-    error_code, response = meraki_functions.create_network(metadata, net_name_to_id)
+    error_code, network = meraki_functions.create_network(metadata, net_name_to_id)
 
     if error_code:
         # Network Creation failed, stop processing other settings
-        log_buffer += f"Network Creation (Failure): \n\t{response}"
+        log_buffer += f"Network Creation (Failure): \n\t{network}"
         logger.info(log_buffer)
 
         completion_status["_name"] = metadata['name']
-        completion_status['settings']['creation']['output'] = response
+        completion_status['settings']['creation']['output'] = network
 
         return completion_status
 
-    log_buffer += f"Network Creation/Update (Success): \n\t{response}\n"
+    log_buffer += f"Network Creation/Update (Success): \n\t{network}\n"
     completion_status['settings']['creation']['status'] = "Success"
-    completion_status['settings']['creation']['output'] = response
+    completion_status['settings']['creation']['output'] = network
 
     # Newly Created Net ID
-    net_id = response['id']
+    net_id = network['id']
 
     # Iterate through remaining keys, pass off work to respective methods
     del network_config['metadata']
     remaining_settings = list(network_config.keys())
 
     # Track completion status of each setting for table display
-    completion_status["_name"] = response['name']
+    completion_status["_name"] = network['name']
     for setting in remaining_settings:
         completion_status["settings"][setting] = {"status": "Skipped", "output": None}
 
@@ -171,7 +173,14 @@ def build_new_network(progress: Progress, copy_from_id: str, network_config: dic
                              transient=True)
 
     for setting in remaining_settings:
-        if setting == "claim":
+        if setting == "template":
+            # Apply Config Template (Unbind old template if necessary)
+            status, output, log_buffer = utils.apply_config_template(log_buffer, net_id, net_id_to_config_template,
+                                                                     template_name_to_id,
+                                                                     network_config[setting])
+            completion_status["settings"][setting]['status'] = status
+            completion_status["settings"][setting]['output'] = output
+        elif setting == "claim":
             # Claim Devices into Network
             status, output, log_buffer = utils.claim_devices(log_buffer, net_id, network_config[setting])
             completion_status["settings"][setting]['status'] = status
@@ -205,6 +214,11 @@ def build_new_network(progress: Progress, copy_from_id: str, network_config: dic
         elif setting == "snmp":
             # Network SNMP Settings
             status, output, log_buffer = utils.snmp_config(log_buffer, net_id, network_config[setting])
+            completion_status["settings"][setting]['status'] = status
+            completion_status["settings"][setting]['output'] = output
+        elif setting == "warmspare":
+            # Process Warm Spare MX Configuration
+            status, output, log_buffer = utils.warm_spare_config(log_buffer, net_id, network_config[setting])
             completion_status["settings"][setting]['status'] = status
             completion_status["settings"][setting]['output'] = output
         elif setting == "vlans":
@@ -308,7 +322,7 @@ def main():
         sys.exit(-1)
 
     console.print("\n")
-    console.print(Panel.fit(f"Create Networks", title="Step 2"))
+    console.print(Panel.fit(f"Create/Update Networks", title="Step 2"))
 
     # Sanity check if Copy From Network Exists
     copy_from_id = None
@@ -324,7 +338,7 @@ def main():
     # Create a Rich Table showing processing results
     completions = []
     unique_settings = set()
-    table = Table(title="Creation Summary")
+    table = Table(title="Creation/Update Summary")
     table.add_column("Network Name", style="cyan", justify="left")
 
     # Iterate through networks and create them (apply various configs based on fields)!

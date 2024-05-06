@@ -90,6 +90,71 @@ def load_ref_config(filename: str) -> dict | None:
         return None
 
 
+def apply_config_template(log_buffer: str, net_id: str, net_id_to_config_template: dict, template_name_to_id: dict,
+                          config: dict) -> tuple[str, dict | str, str]:
+    """
+    Apply a Configuration Template to a Meraki Network
+    :param log_buffer: String representing processing logs written to log file
+    :param net_id: Network ID
+    :param net_id_to_config_template: Mapping of Network ID to Configuration Template Names
+    :param template_name_to_id: Mapping of Configuration Template Names to IDs
+    :param config: Raw Configuration Template Config
+    :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
+    """
+    log_buffer += "Apply Configuration Template:\n"
+
+    # Check for Ref. Config, load if found
+    if "_ref" in config:
+        config = load_ref_config(config["_ref"])
+
+        if not config:
+            result = "Ref File not found... skipping."
+            log_buffer += f"(Failure): {result}\n"
+            return "Failure", result, log_buffer
+
+    # First remove any custom fields
+    custom_fields, remaining_fields = separate_custom_fields(config)
+
+    # Check if network is already bound to template, but bound to the wrong template
+    if net_id in net_id_to_config_template:
+        if net_id_to_config_template[net_id] != custom_fields['_name_template']:
+            # Unbind from current template
+            unbind_payload = custom_fields.get("_unbind", {})
+            error_code, response = meraki_functions.unbind_network(net_id, unbind_payload)
+
+            if error_code:
+                log_buffer += f"-Unbind (Failure): \n\t{response}\n"
+                return "Failure", response, log_buffer
+            else:
+                log_buffer += f"-Unbind (Success): \n\t{response}\n"
+        else:
+            # Correct template already bound, return
+            result = f"Template `{custom_fields['_name_template']}` Already Applied."
+            log_buffer += f"-Bind (Success): \n\t{result}\n"
+            return "Success", result, log_buffer
+
+    # Check if new template name field is blank (indicates unbind only)
+    if custom_fields['_name_template'] == "":
+        return "Success", "Unbind Only", log_buffer
+
+    # Check if template exists
+    if custom_fields['_name_template'] not in template_name_to_id:
+        result = "Template Not Found... skipping."
+        log_buffer += f"-Bind (Failure): \n\t{result}\n"
+        return "Failure", result, log_buffer
+
+    # Apply Configuration Template
+    remaining_fields['configTemplateId'] = template_name_to_id[custom_fields['_name_template']]
+    error_code, response = meraki_functions.bind_network(net_id, remaining_fields)
+
+    if error_code:
+        log_buffer += f"-Bind (Failure): \n\t{response}\n"
+        return "Failure", response, log_buffer
+
+    log_buffer += f"-Bind (Success): \n\t{response}\n"
+    return "Success", response, log_buffer
+
+
 def claim_devices(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | str, str]:
     """
     Claim 1 or More Devices into Network. Devices must be unclaimed and in the inventory!
@@ -98,7 +163,7 @@ def claim_devices(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict
     :param config: Raw Device Claim Config
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Claim Device(s) "
+    log_buffer += "Claim Device(s): "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -120,8 +185,8 @@ def claim_devices(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict
 
     log_buffer += f"(Success): \n\t{response}\n"
 
-    # Wait for 1 minute after claiming device, all other device updates will fail without it
-    time.sleep(60)
+    # Wait for 2 minute after claiming device, all other device updates will fail without it
+    time.sleep(120)
 
     return "Success", response, log_buffer
 
@@ -134,7 +199,7 @@ def firmware_upgrade(log_buffer: str, net_id: str, config: dict) -> tuple[str, d
     :param config: Raw Firmware Upgrade Config
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Firmware Upgrade "
+    log_buffer += "Firmware Upgrade: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -211,7 +276,7 @@ def site_to_site_vpn_config(log_buffer: str, net_id: str, net_name_to_id: dict, 
     :param config: Raw Site to Site Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Site to Site VPN Config "
+    log_buffer += "Site to Site VPN Config: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -256,7 +321,7 @@ def syslog_server_config(log_buffer: str, net_id: str, config: dict) -> tuple[st
     :param config: Raw Syslog Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Syslog Config "
+    log_buffer += "Syslog Config: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -278,6 +343,36 @@ def syslog_server_config(log_buffer: str, net_id: str, config: dict) -> tuple[st
     return "Success", response, log_buffer
 
 
+def warm_spare_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | str, str]:
+    """
+    Apply Warm Spare Configs to Meraki Network
+    :param log_buffer: String representing processing logs written to log file
+    :param net_id: Network ID
+    :param config: Raw Warm Spare Config from JSON
+    :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
+    """
+    log_buffer += "Warm Spare Config: "
+
+    # Check for Ref. Config, load if found
+    if "_ref" in config:
+        config = load_ref_config(config["_ref"])
+
+        if not config:
+            result = "Ref File not found... skipping."
+            log_buffer += f"(Failure): {result}\n"
+            return "Failure", result, log_buffer
+
+    # Update SysLog Configs
+    error_code, response = meraki_functions.update_warm_spare(net_id, config)
+
+    if error_code:
+        log_buffer += f"(Failure): \n\t{response}\n"
+        return "Failure", response, log_buffer
+
+    log_buffer += f"(Success): \n\t{response}\n"
+    return "Success", response, log_buffer
+
+
 def snmp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | str, str]:
     """
     Apply SNMP Configs to Meraki Network
@@ -286,7 +381,7 @@ def snmp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict |
     :param config: Raw SNMP Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "SNMP Config "
+    log_buffer += "SNMP Config: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -316,7 +411,7 @@ def amp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | 
     :param config: Raw AMP Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "AMP Config "
+    log_buffer += "AMP Config: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -346,7 +441,7 @@ def content_filtering_config(log_buffer: str, net_id: str, config: dict) -> tupl
     :param config: Raw Content Filtering Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Content Filtering Config "
+    log_buffer += "Content Filtering Config: "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -430,9 +525,9 @@ def vlans_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, list 
 
         if error_code:
             if 'id' in remaining_fields:
-                log_buffer += f"-VLAN Creation (Failure): \n\t{new_vlan}\n"
+                log_buffer += f"-VLAN Creation/Update (Failure): \n\t{new_vlan}\n"
             else:
-                log_buffer += f"-VLAN Creation (Failure): \n\t{new_vlan}\n"
+                log_buffer += f"-VLAN Creation/Update (Failure): \n\t{new_vlan}\n"
 
             status = "Partial"
             continue
@@ -468,15 +563,8 @@ def vlans_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, list 
                     status = "Partial"
                     continue
 
-            # Grabs exiting vlan fields, updates fields with new values specified - dict keys are unique
-            combined_update_config = {**new_vlan, **dhcp_config}
-
-            # Remove duplicate fields
-            del combined_update_config['networkId']
-            del combined_update_config['id']
-
             # Update VLAN (sets DHCP options)
-            error_code, response = meraki_functions.update_vlan(net_id, new_vlan['id'], combined_update_config)
+            error_code, response = meraki_functions.update_vlan(net_id, new_vlan['id'], dhcp_config)
 
             if error_code:
                 log_buffer += f"--VLAN {new_vlan['id']} DHCP (Failure): \n\t{response}\n"

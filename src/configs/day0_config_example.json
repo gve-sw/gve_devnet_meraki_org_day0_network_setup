@@ -10,6 +10,12 @@
         "tags": [],
         "notes": ""
       },
+      "template": {
+        "_name_template": "Master Template",
+        "_unbind": {
+          "retainConfigs": false
+        }
+      },
       "devices": [
         {
           "serial": "XXXX-XXXX-XXXX",
@@ -69,6 +75,11 @@
             }
           }
         }
+      },
+      "warmspare": {
+        "enabled": true,
+        "spareSerial": "XXXX-XXXX-XXXX",
+        "uplinkMode": "public"
       },
       "vlans": [
         {
