@@ -236,8 +236,20 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
             remaining_row = row[1:]
 
             # Meta Data Section
-            if "name" in column_identifier and remaining_row.first_valid_index():
-                current_network['metadata']['name'] = row[remaining_row.first_valid_index()]
+            if "name of the network" in column_identifier:
+                # Special check, if network name not given or network name is not a string (skip all processing)
+                if not remaining_row.first_valid_index() or not isinstance(row[remaining_row.first_valid_index()], str):
+                    # Iterate through all sub elements of network we are skipping, stop at the next blank line
+                    while i < len(df):
+                        row = df.iloc[i]
+                        if row[0] is None:
+                            break
+                        i += 1
+
+                    i += 1
+                    continue
+                else:
+                    current_network['metadata']['name'] = row[remaining_row.first_valid_index()]
 
             if "timezone" in column_identifier and remaining_row.first_valid_index():
                 current_network['metadata']['timeZone'] = row[remaining_row.first_valid_index()]
@@ -399,23 +411,23 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
 
             i += 1
 
-        # Append Final Network (no reset actions - final addition):
+        # Append Final Network if not empty - meaning skipped (no reset actions - final addition):
+        if 'name' in current_network['metadata']:
+            # Final actions before append...
+            if len(claim_serials) > 0:
+                current_network = insert_into_specific_dict_position(current_network, 1, 'claim',
+                                                                     {"serials": claim_serials})
+            if len(devices) > 0:
+                current_network = insert_into_specific_dict_position(current_network, 2, 'devices', devices)
 
-        # Final actions before append...
-        if len(claim_serials) > 0:
-            current_network = insert_into_specific_dict_position(current_network, 1, 'claim',
-                                                                 {"serials": claim_serials})
-        if len(devices) > 0:
-            current_network = insert_into_specific_dict_position(current_network, 2, 'devices', devices)
+            current_network['firmware'] = firmware
 
-        current_network['firmware'] = firmware
+            # Print all the settings we found...
+            self.console.print(
+                f"Found the Following Network Configurations for [blue]{current_network['metadata']['name'] if 'name' in current_network['metadata'] else 'N/A'}[/]: {list(current_network.keys())}")
 
-        # Print all the settings we found...
-        self.console.print(
-            f"Found the Following Network Configurations for [blue]{current_network['metadata']['name'] if 'name' in current_network['metadata'] else 'N/A'}[/]: {list(current_network.keys())}")
-
-        # Add to networks list
-        day0_config['networks'].append(current_network)
+            # Add to networks list
+            day0_config['networks'].append(current_network)
 
         return day0_config
 
