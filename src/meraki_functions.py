@@ -556,3 +556,22 @@ def update_warm_spare(network_id: str, warm_spare_config: dict) -> tuple[
     except Exception as e:
         # SDK Error
         return "500", str(e)
+
+
+def update_mx_uplinks(serial: str, uplink_config: dict) -> tuple[
+    str | None, dict | str]:
+    """
+    Update MX Appliance Uplink configs, return response or (error code, error message)
+    https://developer.cisco.com/meraki/api-v1/update-device-appliance-uplinks-settings/
+    :param serial: MX Serial
+    :param uplink_config: MX Uplinks Update Payload
+    :return: Error Code (if relevant), Response (or Error Message)
+    """
+    try:
+        response = dashboard.appliance.updateDeviceApplianceUplinksSettings(serial, **uplink_config)
+        return None, response
+    except meraki.APIError as e:
+        return e.status, str(e)
+    except Exception as e:
+        # SDK Error
+        return "500", str(e)

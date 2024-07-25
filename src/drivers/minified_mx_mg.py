@@ -104,6 +104,33 @@ def process_per_port_vlans(per_port_vlan_df: pd.DataFrame) -> list[dict]:
     return parsed_vlans
 
 
+def process_mx_uplink_settings(mx_uplink_settings: pd.DataFrame) -> dict:
+    """
+    Process each Excel line representing a MX Uplink config, parse it into the correct MX Uplink JSON structure
+    :param mx_uplink_settings: Dataframe representing all lines of MX Uplink config from Excel doc
+    :return: Parsed MX Uplink settings in the proper format
+    """
+    parsed_mx_uplink_settings = {"interfaces": {}}
+
+    # Convert each VLAN to a dict and add to the current network
+    for _, settings_row in mx_uplink_settings.iterrows():
+        raw_settings_dict = settings_row.to_dict()
+
+        wan = settings_row.iloc[0]
+        parsed_mx_uplink_settings["interfaces"][wan] = {'enabled': raw_settings_dict['enabled']}
+
+        # SVI Processing
+        if 'svis' in raw_settings_dict:
+            parsed_mx_uplink_settings["interfaces"][wan]['svis'] = {raw_settings_dict['svis']: {
+                'assignmentMode': raw_settings_dict['assignmentMode'],
+                'address': raw_settings_dict['address'],
+                'gateway': raw_settings_dict['gateway'],
+                'nameservers': {'addresses': raw_settings_dict['nameservers'].split(',')}
+            }}
+
+    return parsed_mx_uplink_settings
+
+
 def insert_into_specific_dict_position(current_dict: dict, pos: int, key: str, value: dict | list) -> dict:
     """
     Insert a key, value into a specific position within a dict (ex: claim configuration must be earlier in the dict!)
@@ -288,19 +315,14 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
                         current_network['traffic_shaping']["_uplink_bandwidth"]["bandwidthLimits"]['wan2'][
                             'limitDown'] = row[remaining_row.first_valid_index()]
 
-            # Claim Section (MX and MG)
+            # Device Section (MX and MG) - Claim, Firmware, Device Specific Configurations
             if 'serial number' in column_identifier:
                 # Check side by side columns (do not add firmware value if left blank!)
                 serial = row[remaining_row.first_valid_index()]
 
                 if 'firmware' not in serial.lower():
+                    # Claim Section
                     claim_serials.append(serial)
-
-                    # Devices Section
-                    if address:
-                        devices.append({'serial': serial, 'address': address, "tags": ["meraki_script"]})
-                    else:
-                        devices.append({'serial': serial, "tags": ["meraki_script"]})
 
                     # Firmware Section
                     firmware_value = row[remaining_row.last_valid_index()]
@@ -309,6 +331,62 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
                             "nextUpgrade": {"toVersion": {"_name_id": firmware_value}}}
                     elif 'mx' in column_identifier:
                         firmware['products']['appliance'] = {"nextUpgrade": {"toVersion": {"_name_id": firmware_value}}}
+
+                    # Devices Specific Configuration Section
+                    device = {'serial': serial, "tags": ["meraki_script"]}
+
+                    if address:
+                        device['address'] = address
+
+                    # Nested Device Settings
+                    device_settings_index = i + 1
+                    nested_settings = False
+                    while device_settings_index < len(df) and pd.isna(df.iloc[device_settings_index, 0]):
+                        nested_settings = True
+
+                        next_row = df.iloc[device_settings_index].dropna()
+                        next_row = next_row.reset_index(drop=True)
+
+                        next_column_identifier = str(next_row[0]).lower()
+
+                        # MX Device Settings
+                        if 'mx' in column_identifier:
+
+                            # MX Uplink Settings
+                            if "uplink" in next_column_identifier:
+                                mx_uplink_setting_headers = next_row.to_list()
+                                mx_uplink_setting_data = []
+
+                                inner_settings_index = device_settings_index + 1  # Move to the next row to start processing Uplink data
+                                while inner_settings_index < len(df) and pd.isnull(
+                                        df.iloc[inner_settings_index][0]) and 'settings' not in str(
+                                        df.iloc[inner_settings_index][1].lower()):
+                                    data_row = df.iloc[inner_settings_index].dropna()
+                                    data_row = data_row.reset_index(drop=True)
+
+                                    mx_uplink_setting_data.append(data_row.to_list())
+                                    inner_settings_index += 1
+
+                                # Create VLAN DataFrame and convert to dictionary if mx_uplink_setting_data is not empty
+                                if mx_uplink_setting_data:
+                                    mx_uplink_setting_df = pd.DataFrame(mx_uplink_setting_data,
+                                                                        columns=mx_uplink_setting_headers)
+
+                                    # Process mx uplinks, convert to appropriate format
+                                    device['_mx_uplinks'] = process_mx_uplink_settings(mx_uplink_setting_df)
+
+                                    # Batch of device settings processed
+                                    device_settings_index += len(mx_uplink_setting_data)
+
+                        # Advance to next setting (if present)
+                        device_settings_index += 1
+
+                    devices.append(device)
+
+                    # Catch up main index, skip outer loop increment
+                    if nested_settings:
+                        i = device_settings_index
+                        continue
 
             # Site to Site VPN
             if 'site-to-site' in column_identifier and remaining_row.first_valid_index():
@@ -364,9 +442,9 @@ class MinifiedMXMGDriver(ExcelDriverInterface):
 
                     current_network['warmspare'] = parsed_spare
 
-                continue  # Skip the outer loop increment since it's done internally for VLAN rows
+                continue
 
-            # Warm Spare Section
+            # Template Section
             if 'template name' in column_identifier:
                 template_headers = row.tolist()
                 template_data = []

@@ -39,6 +39,7 @@ assumptions/considerations for its parser include:
 * The user inputted configurations (green) follow the same rules and ideas as their `JSON File Structure` equivalent (
   ex: values without _ are passed in as API values, so they must conform to the API spec)
 * Unnecessary values can be left blank (ex: DHCP configuration if not responding to DHCP requests)
+* Nested device specific configuration (ex: MX Uplink config) must be defined directly below the device row (row containing the device serial). The row must be "indented" (first column left blank), and a header + data row can be defined.
 * To add or remove VLANs, simply add or remove a VLAN row
 
 If using the driver, it's recommend to copy and paste the provided example, then fill in the necessary values (and

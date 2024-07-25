@@ -17,6 +17,7 @@ __author__ = "Trevor Maco <tmaco@cisco.com>"
 __copyright__ = "Copyright (c) 2024 Cisco and/or its affiliates."
 __license__ = "Cisco Sample Code License, Version 1.1"
 
+import argparse
 import datetime
 import importlib
 import json
@@ -178,71 +179,49 @@ def build_new_network(progress: Progress, copy_from_id: str, network_config: dic
             status, output, log_buffer = utils.apply_config_template(log_buffer, net_id, net_id_to_config_template,
                                                                      template_name_to_id,
                                                                      network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "claim":
             # Claim Devices into Network
             status, output, log_buffer = utils.claim_devices(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "firmware":
             # Schedule Firmware upgrades
             status, output, log_buffer = utils.firmware_upgrade(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "siteToSiteVPN":
             # Configure "global" site to site settings - mode and possible hubs
             status, output, log_buffer = utils.site_to_site_vpn_config(log_buffer, net_id, net_name_to_id,
                                                                        network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "amp":
             # Network AMP Settings
             status, output, log_buffer = utils.amp_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "content_filtering":
             # Network Content Filtering Settings
             status, output, log_buffer = utils.content_filtering_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "syslog":
             # Network SysLog Servers Settings
             status, output, log_buffer = utils.syslog_server_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "snmp":
             # Network SNMP Settings
             status, output, log_buffer = utils.snmp_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "warmspare":
             # Process Warm Spare MX Configuration
             status, output, log_buffer = utils.warm_spare_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "vlans":
             # Process VLAN List (triggers processing for DHCP and VPN config as well)
             status, output, log_buffer = utils.vlans_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "vlan_per_port":
             # Process VLAN Per Port List
             status, output, log_buffer = utils.vlan_per_port_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "devices":
             # Process Device List (modifies attributes about device, NOT claiming - devices should be claimed)
             status, output, log_buffer = utils.devices_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         elif setting == "traffic_shaping":
             # Process VLAN List (triggers processing for DHCP and VPN config as well)
             status, output, log_buffer = utils.traffic_shaping_config(log_buffer, net_id, network_config[setting])
-            completion_status["settings"][setting]['status'] = status
-            completion_status["settings"][setting]['output'] = output
         else:
             log_buffer += f"Unknown options: {setting}. Not supported at this time.\n"
+            continue
+
+        completion_status["settings"][setting]['status'] = status
+        completion_status["settings"][setting]['output'] = output
 
         progress.update(task, advance=1)
 
@@ -260,8 +239,17 @@ def main():
     Main method, process all networks on day 0 config, apply various configured settings
     """
     console.print(Panel.fit("Meraki Day 0 Network Configuration"))
-    input_filename = config.NETWORKS_FILE_NAME
     driver_instance = None
+
+    # Set up argument parser (for ability to specify input file)
+    parser = argparse.ArgumentParser(description='Process network configuration file.')
+    parser.add_argument('-i', '--input', type=str, default=config.NETWORKS_FILE_NAME, help='Input JSON/Excel file '
+                                                                                           'name (with extension)')
+
+    args = parser.parse_args()
+
+    # Get the input file name (either from CLI or config file)
+    input_filename = args.input
 
     if input_filename.endswith('.json'):
         # JSON Input

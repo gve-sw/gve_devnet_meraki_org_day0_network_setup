@@ -4,20 +4,29 @@ This script creates (or modifies) Meraki networks with a provided `JSON` or `Exc
 The script expects a JSON or Excel file structured in a specific format (see `JSON File Structure` or `Excel File Structure` section respectively).
 
 Supported Settings Include:
-* Network Creation
-* Binding/Unbinding Networks to Configuration Templates
-* Claim Devices into Network (must be present and unclaimed in inventory!)
-* Firmware Upgrades 
-* Device Settings (address, tags, etc.)
-* VLAN Creation (VPN, DHCP configurations: `_vpn`, `_dhcp`)
-* MX Per Port VLAN Settings
-* MX Warm Spare Configuration
-* Site to Site VPN Configuration
-* Threat Protection Configurations (AMP)
-* Content Filtering Configurations
-* SNMP Configurations
-* Syslog Configurations
-* SD-WAN Traffic Shaping (Uplink Bandwidth: `_uplink_bandwidth`)
+* Network Level:
+  * Network Creation
+  * Binding/Unbinding Networks to Configuration Templates
+  * Claim Devices into Network (must be present and unclaimed in inventory!)
+  * Firmware Upgrades
+  * SNMP Configurations
+  * Syslog Configurations
+* Device Level:
+  * Device Settings (address, tags, etc.)
+* MX Configuration:
+  * VLAN:
+    * Creation
+    * Enable VLAN over VPN (`_vpn`)
+    * DHCP configurations (`_dhcp`)
+  * Per Port VLAN Settings
+  * Warm Spare Configuration
+  * Site to Site VPN Configuration
+  * AMP Threat Protection Configurations
+  * Content Filtering Configurations
+  * Device Level
+    * Uplink Configuration (`_mx_uplinks`)
+  * SD-WAN Traffic Shaping:
+    * Uplink Bandwidth (`_uplink_bandwidth`)
 
 ## Contacts
 * Trevor Maco
@@ -88,7 +97,7 @@ All other fields at the same level as "metadata" are considered network level `S
 MERAKI_API_KEY="API key goes here"
 ORG_ID="Org ID goes here"
 ```
-4. Specify the name of the `Configuration File` holding network configurations in `config.py` (the file **MUST** be located in `configs` directory). Depending on the file extension (.json, .xlsx), the code will process the file differently:
+4. Specify the name of the `Configuration File` holding network configurations in `config.py` (the file **MUST** be located in `configs` directory). This can also be done via a CLI argument (see usage section). Depending on the file extension (.json, .xlsx), the code will process the file differently:
 ```python
 NETWORKS_JSON_FILE_NAME = "day0_config_example.json"
 ```
@@ -97,12 +106,17 @@ NETWORKS_JSON_FILE_NAME = "day0_config_example.json"
 
 ## Usage
 To run the program, use the command:
-```
+```shell
 $ python3 setup.py
 ```
 The code can also be run with docker using:
-```
+```shell
 $ docker-compose up -d --build
+```
+
+To specify the input configuration file, use the `-i` or `--input` flag (again, the file MUST be located in the `configs` directory):
+```shell
+$ python3 setup.py -i day0_config_example.json
 ```
 
 This will read in the `Configuration File`. Depending on the chosen configuration file type, the code will read and process the file differently:

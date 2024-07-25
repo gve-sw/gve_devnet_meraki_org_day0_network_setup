@@ -163,7 +163,7 @@ def claim_devices(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict
     :param config: Raw Device Claim Config
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Claim Device(s): "
+    log_buffer += "Claim Device(s) "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -171,7 +171,7 @@ def claim_devices(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     serials = config.get("serials", [])
@@ -199,7 +199,7 @@ def firmware_upgrade(log_buffer: str, net_id: str, config: dict) -> tuple[str, d
     :param config: Raw Firmware Upgrade Config
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Firmware Upgrade: "
+    log_buffer += "Firmware Upgrade "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -207,7 +207,7 @@ def firmware_upgrade(log_buffer: str, net_id: str, config: dict) -> tuple[str, d
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # Get Available Firmware Upgrades
@@ -276,7 +276,7 @@ def site_to_site_vpn_config(log_buffer: str, net_id: str, net_name_to_id: dict, 
     :param config: Raw Site to Site Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Site to Site VPN Config: "
+    log_buffer += "Site to Site VPN Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -284,7 +284,7 @@ def site_to_site_vpn_config(log_buffer: str, net_id: str, net_name_to_id: dict, 
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     mode = config.get("mode", "hub")
@@ -321,7 +321,7 @@ def syslog_server_config(log_buffer: str, net_id: str, config: dict) -> tuple[st
     :param config: Raw Syslog Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Syslog Config: "
+    log_buffer += "Syslog Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -329,7 +329,7 @@ def syslog_server_config(log_buffer: str, net_id: str, config: dict) -> tuple[st
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # Update SysLog Configs
@@ -351,7 +351,7 @@ def warm_spare_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, 
     :param config: Raw Warm Spare Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Warm Spare Config: "
+    log_buffer += "Warm Spare Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -359,7 +359,7 @@ def warm_spare_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, 
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # Update SysLog Configs
@@ -381,7 +381,7 @@ def snmp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict |
     :param config: Raw SNMP Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "SNMP Config: "
+    log_buffer += "SNMP Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -389,7 +389,7 @@ def snmp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict |
 
         if not syslog_config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # Update SNMP Configs
@@ -411,7 +411,7 @@ def amp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | 
     :param config: Raw AMP Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "AMP Config: "
+    log_buffer += "AMP Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -419,7 +419,7 @@ def amp_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, dict | 
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # Update AMP Configs
@@ -441,7 +441,7 @@ def content_filtering_config(log_buffer: str, net_id: str, config: dict) -> tupl
     :param config: Raw Content Filtering Config from JSON
     :return: Tuple of Status (Success | Failure), Result, Updated Log Buffer
     """
-    log_buffer += "Content Filtering Config: "
+    log_buffer += "Content Filtering Config "
 
     # Check for Ref. Config, load if found
     if "_ref" in config:
@@ -449,7 +449,7 @@ def content_filtering_config(log_buffer: str, net_id: str, config: dict) -> tupl
 
         if not config:
             result = "Ref File not found... skipping."
-            log_buffer += f"(Failure): {result}\n"
+            log_buffer += f"(Failure): \n\t{result}\n"
             return "Failure", result, log_buffer
 
     # First remove any custom fields
@@ -652,27 +652,56 @@ def devices_config(log_buffer: str, net_id: str, config: dict) -> tuple[str, lis
             device_config = load_ref_config(device_config["_ref"])
 
             if not device_config:
-                log_buffer += "--Device Update (Failure): Ref File not found... skipping.\n"
+                log_buffer += "-Device Configuration (Failure): Ref File not found... skipping.\n"
                 status = "Partial"
                 continue
 
         # Update device!
         if 'serial' not in device_config:
-            log_buffer += f"-Device Update (Failure): \n\tNo Device Serial provided... skipping.\n"
+            log_buffer += f"-Device Configuration (Failure): \n\tNo Device Serial provided... skipping.\n"
             status = "Partial"
             continue
 
         serial = device_config['serial']
         del device_config['serial']
 
-        error_code, device = meraki_functions.update_device(serial, device_config)
+        log_buffer += f"-Device ({serial}):\n"
+
+        # First remove any custom fields
+        custom_fields, remaining_fields = separate_custom_fields(device_config)
+
+        # Main Device Update
+        error_code, device = meraki_functions.update_device(serial, remaining_fields)
 
         if error_code:
-            log_buffer += f"-Device Update (Failure): \n\t{device}\n"
+            log_buffer += f"--Update (Failure): \n\t{device}\n"
             status = "Partial"
             continue
 
-        log_buffer += f"-Device Update (Success): \n\t{device}\n"
+        log_buffer += f"--Update (Success): \n\t{device}\n"
+
+        # Process MX Uplink configs if specified
+        if "_mx_uplinks" in custom_fields:
+            mx_uplink_config = custom_fields['_mx_uplinks']
+
+            # Check for Ref. Config, load if found
+            if "_ref" in mx_uplink_config:
+                mx_uplink_config = load_ref_config(mx_uplink_config["_ref"])
+
+                if not mx_uplink_config:
+                    log_buffer += f"--Uplink Configuration (Failure): Ref File not found... skipping.\n"
+                    status = "Partial"
+                    continue
+
+            # Update MX Uplink Configs
+            error_code, response = meraki_functions.update_mx_uplinks(serial, mx_uplink_config)
+
+            if error_code:
+                log_buffer += f"--Uplink Configuration (Failure): \n\t{response}\n"
+                status = "Partial"
+                continue
+            else:
+                log_buffer += f"--Uplink Configuration (Success): \n\t{response}\n"
 
     # Get Current Devices in Network
     error_code, response = meraki_functions.get_network_devices(net_id)
@@ -716,7 +745,7 @@ def traffic_shaping_config(log_buffer: str, net_id: str, config: dict) -> tuple[
                 log_buffer += "-Uplink Bandwidth (Failure): Ref File not found... skipping.\n"
                 status = "Partial"
 
-        # Update VLAN (sets DHCP options)
+        # Update Traffic Shaping
         error_code, response = meraki_functions.update_traffic_shaping_uplink_bandwidth_settings(net_id,
                                                                                                  bandwidth_config)
 

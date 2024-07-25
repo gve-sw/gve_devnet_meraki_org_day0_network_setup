@@ -20,7 +20,25 @@
         {
           "serial": "XXXX-XXXX-XXXX",
           "name": "MX Example",
-          "address": ""
+          "address": "",
+          "_mx_uplinks": {
+            "interfaces": {
+              "wan1": {
+                "svis": {
+                  "ipv4": {
+                      "assignmentMode": "static",
+                      "address": "X.X.X.241/24",
+                      "gateway": "X.X.X.1",
+                      "nameservers": {
+                          "addresses": [
+                              "8.8.8.8"
+                          ]
+                      }
+                  }
+                }
+              }
+            }
+          }
         }
       ],
       "claim": {
